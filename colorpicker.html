@@ -1,0 +1,162 @@
+<!doctype html>
+<html>
+<head>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="AdsBot-Google" content="noindex" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <script type="text/javascript" src="js/bootstrap-filestyle.min.js"> </script>
+  <title>Color Eyedropper</title>
+  <meta charset="utf-8">
+<style>
+
+html,body{
+  height:100%;
+}
+
+.container{
+  margin-top: 50px;
+  margin-left: 50px;
+  margin-right: 50px;
+}
+
+.thumbnail{
+  width: 20%;
+}
+.thumbnail img {
+  width: 100%;
+  cursor: crosshair;
+}
+
+.preview{
+  position:absolute;
+  display:block;
+  margin:0;
+  padding:0;
+  width:50px;
+  height:50px;
+  border: 5px solid #FFF;
+
+}
+#cs{
+  display:none;
+}
+
+</style>
+</head>
+
+<body>
+<div class=container>
+  <h2><left>Color Finder</left></h2>
+<div><canvas id="cs"></canvas></div>
+<div><input type="file" accept="image/*" onchange="loadFile(event)" style="color:transparent;" capture></div>
+<div class="thumbnail">
+  <div class="preview"></div>
+  <img id="output"/>
+  </div>
+<div class="result" id="result"></div>
+<div class="resultRgb" id="resultRgb"></div>
+<div class="searchUrl" id="searchUrl"></div>
+
+
+
+<script>
+  var loadFile = function(event) {
+  var reader = new FileReader();
+  reader.onload = function(){
+    var output = document.getElementById('output');
+    output.src = reader.result;
+    };
+    reader.readAsDataURL(event.target.files[0]);
+  };
+</script>
+
+<script>
+// vars
+var img = _('.thumbnail img'),
+    canvas = _('#cs'),
+    result = _('.result'),
+    preview = _('.preview'),x = '',y = '';
+
+// click function
+img.addEventListener('click', function(e){
+  // chrome
+  if(e.offsetX) {
+    x = e.offsetX;
+    y = e.offsetY;
+  }
+  // firefox
+  else if(e.layerX) {
+    x = e.layerX;
+    y = e.layerY;
+  }
+  useCanvas(canvas,img,function(){
+    var p = canvas.getContext('2d')
+    .getImageData(x, y, 1, 1).data;
+    result.innerHTML = '<span>HEX: '+rgbToHex(p[0],p[1],p[2])+'</span>';
+  });
+},false);
+
+// preview function mousemove
+img.addEventListener('mousemove', function(e){
+  // chrome
+  if(e.offsetX) {
+    x = e.offsetX;
+    y = e.offsetY;
+  }
+  // firefox
+  else if(e.layerX) {
+    x = e.layerX;
+    y = e.layerY;
+  }
+
+  useCanvas(canvas,img,function(){
+
+    // get image data
+    var p = canvas.getContext('2d')
+    .getImageData(x, y, 1, 1).data;
+    // show preview color
+    preview.style.background = rgbToHex(p[0],p[1],p[2]);
+  });
+},false);
+
+
+// canvas function
+function useCanvas(el,image,callback){
+  el.width = image.width; // img width
+  el.height = image.height; // img height
+  // draw image in canvas tag
+  el.getContext('2d')
+  .drawImage(image, 0, 0, image.width, image.height);
+  return callback();
+}
+
+function _(el){
+  return document.querySelector(el);
+};
+
+
+function componentToHex(c) {
+  var hex = c.toString(16);
+  return hex.length == 1 ? "0" + hex : hex;
+}
+function rgbToHex(r, g, b) {
+  return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+
+function findPos(obj) {
+    var curleft = 0, curtop = 0;
+    if (obj.offsetParent) {
+        do {
+            curleft += obj.offsetLeft;
+            curtop += obj.offsetTop;
+        } while (obj = obj.offsetParent);
+        return { x: curleft, y: curtop };
+    }
+    return undefined;
+}
+</script>
+
+</body>
+</html>
