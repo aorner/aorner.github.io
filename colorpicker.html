@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html>
 <head>
@@ -6,8 +7,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-  <script type="text/javascript" src="js/bootstrap-filestyle.min.js"> </script>
-  <title>Color Eyedropper</title>
+  <title>Color Finder</title>
   <meta charset="utf-8">
 <style>
 
@@ -22,7 +22,7 @@ html,body{
 }
 
 .thumbnail{
-  width: 20%;
+  width: 25%;
 }
 .thumbnail img {
   width: 100%;
@@ -37,11 +37,11 @@ html,body{
   width:50px;
   height:50px;
   border: 5px solid #FFF;
-
 }
 #cs{
   display:none;
 }
+
 
 </style>
 </head>
@@ -49,16 +49,23 @@ html,body{
 <body>
 <div class=container>
   <h2><left>Color Finder</left></h2>
-<div><canvas id="cs"></canvas></div>
-<div><input type="file" accept="image/*" onchange="loadFile(event)" style="color:transparent;" capture></div>
-<div class="thumbnail">
+  <div><canvas id="cs"></canvas></div>
+  <div><input type="file" accept="image/*" onchange="loadFile(event)" style="color:transparent;" capture></div>
+  <div class="thumbnail">
   <div class="preview"></div>
   <img id="output"/>
   </div>
-<div class="result" id="result"></div>
-<div class="resultRgb" id="resultRgb"></div>
-<div class="searchUrl" id="searchUrl"></div>
+  <div>
+    <h4 id="uploadedColor" style="visibility:hidden; display:inline">Uploaded color: </h4><h4 id="uploadedColorSwatch" style="visibility:hidden; display:inline">▇</h4>
+  </div>
+  <div>
+    <h4 id="closestColor" style="visibility:hidden; display:inline">Closest color: </h4><h4 id="closestColorSwatch" style="visibility:hidden; display:inline">▇ </h4><h4 id="closestColorName" style="visibility:hidden; display:inline"></h4>
+  </div>
+</div>
 
+
+<!--Table-->
+<table id="tablePreview" class="table">
 
 
 <script>
@@ -73,7 +80,50 @@ html,body{
 </script>
 
 <script>
-// vars
+
+var xyz2lab_L;
+var xyz2lab_A;
+var xyz2lab_B;
+var array2 = [
+  [37.466702500438906,39.81483420947002,36.39430613133561,'Marrakesh','#9B381E'],
+  [39.88611375522211,34.327061999014,15.38864332645884,'Soar','#964546'],
+  [58.359542181729395,38.813947798393535,26.632806609113715,'Down To An Art','#d56f5f'],
+  [47.945717350995515,45.26737282972271,15.016885906834476,'You Wouldn\'t','#bb4e5b'],
+  [52.398038092620226,68.38053771081559,2.8254243644809884,'Pink Pigeon','#e2397a'],
+  [55.80637498063558,83.12925872483967,1.2111533052952872,'Breathing Fire','#ff1986'],
+  [54.79812532174948,67.73034767827562,-8.593842437571597,'Candy Yum-Yum','#e34493'],
+  [59.67790386293312,58.80255369585613,17.58754894463457,'Please Me','#f15d73'],
+  [51.48083033403003,43.78694961578389,13.447634510529284,'Mehr','#c35965'],
+  [67.16860237777549,19.872180754774483,15.224440252686456,'Honeylove','#cf9688'],
+  [60.40916805432663,32.49932922983489,25.26055367438731,'Velvet Teddy','#d27a66'],
+  [42.4187192615288,26.419317023955724,18.709920541232773,'Whirl','#945246'],
+  [52.374651768803346,24.646586826760853,20.08434471242172,'Taupe','#ae6c5b'],
+  [55.983611587119825,17.853267215732494,21.456128500020654,'Yash','#af7a61'],
+  [60.42075106095828,25.677313835088867,16.461062285122342,'Kinda Sexy','#c48075'],
+  [23.002342562909845,34.6120551976733,12.916768343040685,'Diva','#671b25'],
+  [23.24018351097761,34.73367228148147,19.40167512560407,'Sin','#691b1c'],
+  [28.51745376048789,28.642261299837628,16.407420176025134,'Antique Velvet','#702f2b'],
+  [38.4121608784359,58.70940439240668,40.06602794712709,'Russian Red','#b3181d'],
+  [36.50901272806488,53.76431936272025,45.82012279877583,'Chili','#a71e0b'],
+  [38.682346374923945,42.251156874296285,7.542011268277804,'D for Danger','#8e233c'],
+  [53.47458167986072,66.13049542923916,57.95288490677748,'Lady Danger','#ed2600'],
+  [49.322575735265914,72.99367420303943,53.11108799104491,'Red Rock','#e8181d'],
+  [59.17288108303772,61.10626042733342,35.57348385220315,'Tropic Tonic','#f75753'],
+  [55.95967445357597,71.4028167922312,44.32450676226143,'Mangrove','#fb3a3d'],
+  [41.10827694300087,29.651182561581642,-25.433329641252655,'Punk Couture','#7d508a'],
+  [36.25577169969315,32.46570864037723,-26.31370858476567,'Heroine','#74427f'],
+  [13.790595311056759,16.439161684911664,-28.61594099045025,'Matte Royal','#201d4a'],
+  [50.17562858148811,12.093238442669296,25.36496845799727,'Kinkster','#986f4b'],
+  [12.590353102152218,21.592947159183765,11.578742251324996,'Double Fudge','#3e1211'],
+  [28.32090615952481,12.690218262630088,15.552155324558637,'Consensual','#5d3b2a'],
+  [54.15203715563628,20.740460593644816,9.551215993724993,'Love U Back','#a97471'],
+  [46.50215880820675,23.018703579950785,33.426017820443036,'Derriere','#9f5e36'],
+  [51.4198875710284,12.970489482634129,16.031261352751326,'Act Natural','#9a725f'],
+  [52.75036909376276,51.3646186938011,38.982843298678546,'So Chaud','#d7523d'],
+  [29.46675354607038,14.06140312349702,-5.783493572730968,'Smoked Purple','#573e4e'],
+  [59.25688356533274,25.56739146137732,17.669454521457272,'Bronx','#C17D70'],
+  ];
+
 var img = _('.thumbnail img'),
     canvas = _('#cs'),
     result = _('.result'),
@@ -92,11 +142,90 @@ img.addEventListener('click', function(e){
     y = e.layerY;
   }
   useCanvas(canvas,img,function(){
-    var p = canvas.getContext('2d')
-    .getImageData(x, y, 1, 1).data;
-    result.innerHTML = '<span>HEX: '+rgbToHex(p[0],p[1],p[2])+'</span>';
+    var p = canvas.getContext('2d').getImageData(x, y, 1, 1).data;
+    var rValue = p[0];
+    var gValue = p[1];
+    var bValue = p[2];
+    console.log('R: '+rValue);
+    console.log('G: '+gValue);
+    console.log('B: '+bValue);
+    document.getElementById("uploadedColor").style.visibility = "visible";
+    document.getElementById("uploadedColorSwatch").style.visibility = "visible";
+    document.getElementById("uploadedColorSwatch").style.color = "rgb("+rValue+", "+gValue+", "+bValue+")";
+
+    //Further reading: https://www.easyrgb.com/en/math.php
+
+    //sRGB to XYZ
+    var rgb2xyz_R = ( rValue / 255 )
+    var rgb2xyz_G = ( gValue / 255 )
+    var rgb2xyz_B = ( bValue / 255 )
+
+    if ( rgb2xyz_R > 0.04045 ) rgb2xyz_R = Math.pow(((rgb2xyz_R + 0.055)/ 1.055), 2.4)
+      else rgb2xyz_R = rgb2xyz_R / 12.92
+    if ( rgb2xyz_G > 0.04045 ) rgb2xyz_G = Math.pow(((rgb2xyz_G + 0.055)/ 1.055), 2.4)
+      else rgb2xyz_G = rgb2xyz_G / 12.92
+    if ( rgb2xyz_B > 0.04045 ) rgb2xyz_B = Math.pow(((rgb2xyz_B + 0.055)/ 1.055), 2.4)
+      else rgb2xyz_B = rgb2xyz_B / 12.92
+
+    rgb2xyz_R = rgb2xyz_R * 100
+    rgb2xyz_G = rgb2xyz_G * 100
+    rgb2xyz_B = rgb2xyz_B * 100
+
+    var rgb2xyz_X = rgb2xyz_R * 0.4124 + rgb2xyz_G * 0.3576 + rgb2xyz_B * 0.1805
+    var rgb2xyz_Y = rgb2xyz_R * 0.2126 + rgb2xyz_G * 0.7152 + rgb2xyz_B * 0.0722
+    var rgb2xyz_Z = rgb2xyz_R * 0.0193 + rgb2xyz_G * 0.1192 + rgb2xyz_B * 0.9505
+
+    console.log('X: ' + rgb2xyz_X);
+    console.log('Y: ' + rgb2xyz_Y);
+    console.log('Z: ' + rgb2xyz_Z);
+
+    //XYZ to LAB
+    //95.047, 100.000, and 108.883 are perfect reflecting diffuser values based on illuminant D65 (ie. light source: normal daylight) and observer angle 10°
+    //D65 appears to be best practice illuminant, but there is some debate around 2° vs 10° observer angle.
+    //2° observer angles with D65 would instead use values: 95.047, 100.000, 108.883
+    //Further reading: https://sensing.konicaminolta.us/us/blog/understanding-standard-observers-in-color-measurement/
+    var xyz2lab_X = rgb2xyz_X / 94.811
+    var xyz2lab_Y = rgb2xyz_Y / 100.000
+    var xyz2lab_Z = rgb2xyz_Z / 107.304
+
+    if ( xyz2lab_X > 0.008856 ) xyz2lab_X = Math.pow(xyz2lab_X,1/3)
+      else xyz2lab_X = ( 7.787 * xyz2lab_X ) + ( 16 / 116 )
+    if ( xyz2lab_Y > 0.008856 ) xyz2lab_Y = Math.pow(xyz2lab_Y,1/3)
+      else xyz2lab_Y = ( 7.787 * xyz2lab_Y ) + ( 16 / 116 )
+    if ( xyz2lab_Z > 0.008856 ) xyz2lab_Z = Math.pow(xyz2lab_Z,1/3)
+      else xyz2lab_Z = ( 7.787 * xyz2lab_Z ) + ( 16 / 116 )
+
+    var xyz2lab_L = ( 116 * xyz2lab_Y ) - 16
+    var xyz2lab_A = 500 * ( xyz2lab_X - xyz2lab_Y )
+    var xyz2lab_B = 200 * ( xyz2lab_Y - xyz2lab_Z )
+
+    console.log('L: '+xyz2lab_L);
+    console.log('A: '+xyz2lab_A);
+    console.log('B: '+xyz2lab_B);
+    console.log('['+xyz2lab_L+','+xyz2lab_A+','+xyz2lab_B+',\'\'],');
+
+    var array1 = [xyz2lab_L,xyz2lab_A,xyz2lab_B];
+    console.log(array1);
+    var i = 0;
+      var result = [];
+      for (; i < array2.length; i++) {
+        result.push(Math.sqrt(Math.pow((array1[0] - array2[i][0]), 2) + Math.pow((array1[1] - array2[i][1]), 2) + Math.pow((array1[2] - array2[i][2]), 2)));
+      };
+      console.log(result);
+      var minResultIndex = result.indexOf(Math.min.apply(null, result));
+      var minResultColor = array2[minResultIndex][3];
+      console.log(minResultColor);
+      var minResultHex = array2[minResultIndex][4];
+      document.getElementById("closestColor").style.visibility = "visible";
+      document.getElementById("closestColorSwatch").style.visibility = "visible";
+      document.getElementById("closestColorSwatch").style.color = minResultHex;
+      document.getElementById("closestColorName").style.visibility = "visible";
+      document.getElementById("closestColorName").innerHTML = minResultColor;
+      document.getElementById("closestColorName").style.color = minResultHex;
+
   });
 },false);
+
 
 // preview function mousemove
 img.addEventListener('mousemove', function(e){
@@ -156,6 +285,9 @@ function findPos(obj) {
     }
     return undefined;
 }
+
+
+
 </script>
 
 </body>
